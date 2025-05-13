@@ -25,10 +25,24 @@ selected_codes = st.multiselect("분석할 종목을 선택하세요:", list(sto
 
 def preprocess_stock_data(code):
     df = fdr.DataReader(code, '2017-01-01')
+    
+    if df is None or df.empty:
+        raise ValueError("데이터를 불러오지 못했습니다.")
+    
     df = ta.add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
     df = df.rename(columns=str.lower)
+    
     df['target'] = (df['close'].shift(-1) > df['close']).astype(int)
     df.dropna(inplace=True)
+    
+    # 필수 컬럼이 존재하는지 확인
+    for col in features:
+        if col not in df.columns:
+            raise ValueError(f"'{col}' 컬럼이 없습니다.")
+
+    # 데이터 충분한지 확인
+    if df[features].shape[0] == 0:
+        raise ValueError("전처리 후 데이터가 없습니다.")
     
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(df[features])
@@ -37,6 +51,9 @@ def preprocess_stock_data(code):
     for i in range(len(X_scaled) - SEQ_LEN):
         Xs.append(X_scaled[i:i+SEQ_LEN])
         ys.append(df['target'].iloc[i+SEQ_LEN])
+    
+    if len(Xs) == 0:
+        raise ValueError("LSTM 학습에 사용할 시퀀스 데이터가 부족합니다.")
     
     return np.array(Xs), np.array(ys), df[features], X_scaled
 
