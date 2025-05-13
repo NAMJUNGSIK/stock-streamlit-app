@@ -39,7 +39,7 @@ def create_train_model(X, y):
     model.add(Dropout(0.2))
     model.add(Dense(1, activation='sigmoid'))  # 확률 예측
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    model.fit(X, y, epochs=5, batch_size=32, verbose=0)
+    model.fit(X, y, epochs=1, batch_size=32, verbose=0)
     return model
 
 # --- Streamlit UI ---
@@ -56,8 +56,10 @@ if st.button("예측 시작"):
     st.line_chart(data['Close'], use_container_width=True)
 
     with st.spinner("모델 학습 중..."):
+        st.text("LSTM 모델 학습 시작")
         X, y, scaler = preprocess_data(data.values)
         model = create_train_model(X, y)
+        st.text("모델 학습 완료")
 
         # 가장 최신 데이터로 예측
         latest_sequence = data.values[-60:]
